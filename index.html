@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+
+<head>
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+	<style>
+		img {
+			width: 300px;
+			height: auto;
+		}
+	</style>
+</head>
+
+<body ng-app="myApp" ng-controller="ImgCtrl as ctrl">
+	<img fallback-images="ctrl.images" />
+	<script>
+		'use strict';
+
+
+		function ImgCtrl() {
+			var self = this;
+			self.images = [
+					"fake_image_1.jpg",
+					"fake_image_2.jpg",
+					"https://static.pexels.com/photos/8700/wall-animal-dog-pet.jpg",
+					"fake_image_3.jpg"
+				];
+		}
+
+		function fallbackImages() {
+
+			return {
+				scope: {
+					fallbackImages: '='
+				},
+				link: function (scope, element, attrs) {
+
+					var loadElement = angular.element(document.createElement('img'));
+
+					scope.$watch('image()', function (newImage, oldImage) {
+						if (newImage) {
+							loadElement.attr('src', newImage);
+						}
+					});
+
+					loadElement.bind('error', function () {
+						scope.$apply(function () {
+							scope.imageFailed(loadElement.attr('src'));
+						});
+					});
+
+					loadElement.bind('load', function () {
+						element.attr('src', loadElement.attr('src'));
+					});
+
+				},
+				controller: function ($scope) {
+
+					$scope.badImages = [];
+
+					$scope.imageFailed = function (image) {
+						$scope.badImages.push(image);
+					};
+
+					$scope.image = function () {
+						var potentialNextImage = $scope.fallbackImages.filter(function (image) {
+							return $scope.badImages.indexOf(image) === -1;
+						});
+
+						if (potentialNextImage.length > 0) {
+							return potentialNextImage[0];
+						}
+					};
+				}
+			};
+		}
+		var myApp = angular.module('myApp', []);
+		myApp.directive('fallbackImages', fallbackImages);
+		myApp.controller('ImgCtrl', [ImgCtrl]);
+	</script>
+</body>
+
+</html>
